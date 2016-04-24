@@ -9,6 +9,7 @@
 
 - name: Create Galaxy configuration file
   template: src=supervisor.conf.j2 dest={{ supervisor_conf_path }}
+  tags: setup_supervisor_config
 
 - name: Stop supervisor
   service: name=supervisor state=stopped
