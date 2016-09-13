@@ -15,7 +15,7 @@ galaxy_extras_config_uwsgi: true
 galaxy_extras_config_ie_proxy: true
 galaxy_extras_config_neo4j_ie: false  # Configure routes for the Neo4j Interactive Environment
 galaxy_extras_config_scripts: true
-galaxy_extras_config_ssl: false
+galaxy_extras_config_ssl: no
 galaxy_extras_config_ssl_method: self-signed  # This may be 'own', 'self-signed' or 'letsencrypt'
 galaxy_extras_galaxy_domain: "localhost"  # This is used by letsencrypt, set it to the domain name under which galaxy can be reached
 galaxy_extras_config_startup: true
