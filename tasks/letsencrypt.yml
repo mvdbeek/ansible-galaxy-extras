@@ -1,37 +1,37 @@
 # Letsencrypt-specific configuration:
 
-- name: Create self-signed SSL cert  # For initial challenge need either http-only or self-signed
-  command: openssl req -new -nodes -x509 -subj "/C=US/ST=Oregon/L=Portland/O=IT/CN=selfsigned" -days 3650 -keyout "{{ nginx_ssl_certificate_key }}" -out "{{ nginx_ssl_certificate }}" -extensions v3_ca creates="{{ nginx_ssl_certificate }}"
-  when: galaxy_extras_config_ssl_method == 'self-signed'
+- name: Create letsencrypt user account key
+  shell: openssl genrsa 4096 > "{{ letsencrypt_user_account_private_key  }}" creates="{{ letsencrypt_user_account_private_key }}"
 
-- name: Create letsencrypt configuration directory
-  file: path=/etc/letsencrypt state=directory mode=0755
+- name: Create letsencrypt user account public key
+  shell: openssl rsa -in "{{ letsencrypt_user_account_private_key  }}" -pubout > "{{ letsencrypt_user_account_public_key }}" creates="{{ letsencrypt_user_account_public_key }}"
+
+- name: Create domain key for {{ galaxy_extras_galaxy_domain  }}  # For initial challenge need either http-only or self-signed
+  shell: openssl genrsa 4096 > "{{ nginx_ssl_certificate_key }}" creates="{{ nginx_ssl_certificate_key }}"
+
+- name: Create CSR for {{ galaxy_extras_galaxy_domain }}
+  shell: openssl req -new -sha256 -key "{{ nginx_ssl_certificate_key }}" -subj "/CN={{ galaxy_extras_galaxy_domain }}" > {{ galaxy_extras_letsencrypt_csr }}
+
+- name: letsencrypt ACME challenge
+  letsencrypt:
+    account_key: "{{ letsencrypt_user_account_private_key }}"
+    csr: "{{ galaxy_extras_letsencrypt_csr }}"
+    dest: "{{ nginx_ssl_certificate }}"
+  register: letsencrypt_challenge
+
+- debug: var=letsencrypt_challenge
 
 - name: Create letsencrypt wellknown directory
   file: path=/etc/letsencrypt/wellknown state=directory mode=0755
 
-- name: Get letsencrypt script from github repository
-  get_url:
-    url: https://raw.githubusercontent.com/lukas2511/letsencrypt.sh/d81eb58536e3ae1170de3eda305688ae28d0575b/letsencrypt.sh
-    dest: /usr/bin/letsencrypt.sh
-    mode: "u=rwx,g=rx,o=r"
-    force: no
+- copy:
+    dest: /etc/letsencrypt/wellknown/{{ item['http-01']['resource'] }}
+    content: "{{ item['http-01']['resource_value'] }}"
+    items: "{{ letsencrypt_challenge['challenge_data']"
+    when: letsencrypt_challenge|changed
 
-- name: Setup letsencrypt-specific configuration files
-  template: >
-    src={{ item.src }}
-    dest={{ item.dest }}
-    owner=root group=root mode={{ item.mode }}
-  with_items:
-    - { src: 'nginx_letsencrypt.conf.j2', dest: '{{ nginx_conf_directory }}/letsencrypt.conf', mode: "u=rw,g=r,o=r" }
-    - { src: 'letsencrypt.conf.j2',       dest: '/etc/letsencrypt/letsencrypt.conf', mode: "u=rw,g=r,o=r" }
-    - { src: 'letsencrypt_refresh.sh.j2', dest: '/usr/local/bin/letsencrypt_refresh.sh', mode: "u=rwx,g=rx,o=r" }
-  notify:
-    - restart nginx
-
-- meta: flush_handlers
-
-- shell: /usr/local/bin/letsencrypt_refresh.sh "{{ galaxy_extras_galaxy_domain }}"
-
-- name: Add letsencrypt renewal script to crontab
-  cron: name="letsencrypt cert renewal" special_time=daily job="/usr/local/bin/letsencrypt_refresh.sh {{ galaxy_extras_galaxy_domain }}"
+- letsencrypt:
+    account_key: "{{ letsencrypt_user_account_private_key }}"
+    csr: "{{ galaxy_extras_letsencrypt_csr }}"
+    dest: "{{ nginx_ssl_certificate }}"
+    data: "{{ letsencrypt_challenge }}"

@@ -206,6 +206,10 @@ use_pbkdf2: false
 nginx_ssl_certificate_key: /etc/ssl/private/nginx.key
 nginx_ssl_certificate: /etc/ssl/private/nginx.crt
 
+letsencrypt_user_account_private_key: /etc/ssl/private/letsencrypt_user.key
+letsencrypt_user_account_public_key: /etc/ssl/private/letsencrypt_user.pub
+galaxy_extras_letsencrypt_csr: /etc/ssl/private/letsencrypt.csr
+
 # Here you can set a path to a pair of ssl keys
 # These will be copied if galaxy_extras_config_ssl_method is set to 'own'
 # This defaults to a set of self-generated keys
