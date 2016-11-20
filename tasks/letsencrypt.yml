@@ -12,6 +12,9 @@
 
 - meta: flush_handlers
 
+- name: Create letsencrypt user account key
+  shell: openssl genrsa 4096 > "{{ letsencrypt_user_account_private_key  }}" creates="{{ letsencrypt_user_account_private_key }}"
+
 - name: create http-01 domain key
   command: openssl genrsa -out {{ domain_key }}.http-01 4096
   args:
