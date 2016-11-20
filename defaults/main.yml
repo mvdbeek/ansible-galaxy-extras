@@ -210,6 +210,13 @@ letsencrypt_user_account_private_key: /etc/ssl/private/letsencrypt_user.key
 letsencrypt_user_account_public_key: /etc/ssl/private/letsencrypt_user.pub
 galaxy_extras_letsencrypt_csr: /etc/ssl/private/letsencrypt.csr
 
+account_key: "{{ letsencrypt_user_account_private_key }}"
+domain_key: "{{ nginx_ssl_certificate_key }}"
+domain_csr: "{{ galaxy_extras_letsencrypt_csr }}"
+domain_crt: "{{ nginx_ssl_certificate }}"
+domain_hostname: "{{ galaxy_extras_galaxy_domain }}"
+cert_subject: "/C=US/ST=New York/L=New York/O=Ansible/OU=Ansible Testing/CN={{ domain_hostname }}"
+
 # Here you can set a path to a pair of ssl keys
 # These will be copied if galaxy_extras_config_ssl_method is set to 'own'
 # This defaults to a set of self-generated keys

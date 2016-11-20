@@ -1,37 +1,42 @@
 # Letsencrypt-specific configuration:
 
-- name: Create letsencrypt user account key
-  shell: openssl genrsa 4096 > "{{ letsencrypt_user_account_private_key  }}" creates="{{ letsencrypt_user_account_private_key }}"
+- name: create http-01 domain key
+  command: openssl genrsa -out {{ domain_key }}.http-01 4096
+  args:
+    creates: "{{ domain_key }}.http-01"
 
-- name: Create letsencrypt user account public key
-  shell: openssl rsa -in "{{ letsencrypt_user_account_private_key  }}" -pubout > "{{ letsencrypt_user_account_public_key }}" creates="{{ letsencrypt_user_account_public_key }}"
+- name: create http-01 challenge single domain csr
+  command: openssl req -new -sha256 -key {{ domain_key }}.http-01 -subj "{{ cert_subject }}" -out {{ domain_csr }}.http-01
+  args:
+    creates: "{{ domain_csr }}.http-01"
 
-- name: Create domain key for {{ galaxy_extras_galaxy_domain  }}  # For initial challenge need either http-only or self-signed
-  shell: openssl genrsa 4096 > "{{ nginx_ssl_certificate_key }}" creates="{{ nginx_ssl_certificate_key }}"
-
-- name: Create CSR for {{ galaxy_extras_galaxy_domain }}
-  shell: openssl req -new -sha256 -key "{{ nginx_ssl_certificate_key }}" -subj "/CN={{ galaxy_extras_galaxy_domain }}" > {{ galaxy_extras_letsencrypt_csr }}
-
-- name: letsencrypt ACME challenge
+- name: start Let's Encrypt http-01 challenge
   letsencrypt:
-    account_key: "{{ letsencrypt_user_account_private_key }}"
-    csr: "{{ galaxy_extras_letsencrypt_csr }}"
-    dest: "{{ nginx_ssl_certificate }}"
-  register: letsencrypt_challenge
+    account_key: "{{ account_key }}"
+    csr: "{{ domain_csr }}.http-01"
+    dest: "{{ domain_crt }}.http-01"
+    challenge: http-01
+  register: letsencrypt
 
-- debug: var=letsencrypt_challenge
+- set_fact:
+    challenge_file: /var/www/html/{{ letsencrypt['challenge_data'][domain_hostname]['http-01']['resource'] }}
+    challenge_value: "{{ letsencrypt['challenge_data'][domain_hostname]['http-01']['resource_value'] }}"
 
-- name: Create letsencrypt wellknown directory
-  file: path=/etc/letsencrypt/wellknown state=directory mode=0755
+- name: create http-01 challenge directory
+  file:
+    path: "{{ challenge_file|dirname }}"
+    state: directory
 
-- copy:
-    dest: /etc/letsencrypt/wellknown/{{ item['http-01']['resource'] }}
-    content: "{{ item['http-01']['resource_value'] }}"
-    items: "{{ letsencrypt_challenge['challenge_data']"
-    when: letsencrypt_challenge|changed
+- name: create the http-01 challenge file
+  copy:
+    dest: "{{ challenge_file }}"
+    content: "{{ challenge_value }}"
 
-- letsencrypt:
-    account_key: "{{ letsencrypt_user_account_private_key }}"
-    csr: "{{ galaxy_extras_letsencrypt_csr }}"
-    dest: "{{ nginx_ssl_certificate }}"
-    data: "{{ letsencrypt_challenge }}"
+- name: Finalize http-01 challenge
+  letsencrypt:
+    account_key: "{{ account_key }}"
+    csr: "{{ domain_csr }}.http-01"
+    dest: "{{ domain_crt }}.http-01"
+    data: "{{ letsencrypt }}"
+    challenge: http-01
+  register: letsencrypt
