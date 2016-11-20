@@ -19,7 +19,7 @@
   register: letsencrypt
 
 - set_fact:
-    challenge_file: /var/www/html/{{ letsencrypt['challenge_data'][domain_hostname]['http-01']['resource'] }}
+    challenge_file: /etc/letsencrypt/wellknown/{{ letsencrypt['challenge_data'][domain_hostname]['http-01']['resource'] }}
     challenge_value: "{{ letsencrypt['challenge_data'][domain_hostname]['http-01']['resource_value'] }}"
 
 - name: create http-01 challenge directory
