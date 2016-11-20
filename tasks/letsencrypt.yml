@@ -31,6 +31,7 @@
     csr: "{{ domain_csr }}.http-01"
     dest: "{{ domain_crt }}.http-01"
     challenge: http-01
+    acme_directory: "{{ acme_directory }}"
   register: letsencrypt
 
 - set_fact:
@@ -57,7 +58,10 @@
     dest: "{{ domain_crt }}.http-01"
     data: "{{ letsencrypt }}"
     challenge: http-01
+    acme_directory: "{{ acme_directory }}"
   register: letsencrypt
+  notify:
+    - restart nginx
   when: letsencrypt|changed
 
 - name: Copy signed certificates to correct location
@@ -66,3 +70,5 @@
    - { 'src': "{{ domain_crt }}.http-01", 'dest': "{{ nginx_ssl_certificate }}" }
    - { 'src': "{{ domain_key }}.http-01", 'dest': "{{ nginx_ssl_certificate_key }}" }
   when: letsencrypt|changed
+
+- meta: flush_handlers
