@@ -33,16 +33,19 @@
 - set_fact:
     challenge_file: /etc/letsencrypt/{{ letsencrypt['challenge_data'][domain_hostname]['http-01']['resource'] }}
     challenge_value: "{{ letsencrypt['challenge_data'][domain_hostname]['http-01']['resource_value'] }}"
+  when: letsencrypt|changed
 
 - name: create http-01 challenge directory
   file:
     path: "{{ challenge_file|dirname }}"
     state: directory
+  when: letsencrypt|changed
 
 - name: create the http-01 challenge file
   copy:
     dest: "{{ challenge_file }}"
     content: "{{ challenge_value }}"
+  when: letsencrypt|changed
 
 - name: Finalize http-01 challenge
   letsencrypt:
@@ -52,3 +55,11 @@
     data: "{{ letsencrypt }}"
     challenge: http-01
   register: letsencrypt
+  when: letsencrypt|changed
+
+- name: Copy signed certificates to correct location
+  copy: remote_src=True src={{ item.src }} dest={{ item.dest }}
+  with_items:
+   - { 'src': "{{ domain_crt }}.http-01", 'dest': "{{ nginx_ssl_certificate }}" }
+   - { 'src': "{{ domain_key }}.http-01", 'dest': "{{ nginx_ssl_certificate_key }}" }
+  when: letsencrypt|changed
