@@ -16,27 +16,27 @@
   shell: openssl genrsa 4096 > "{{ letsencrypt_user_account_private_key  }}" creates="{{ letsencrypt_user_account_private_key }}"
 
 - name: create http-01 domain key
-  command: openssl genrsa -out {{ domain_key }}.http-01 4096
+  command: openssl genrsa -out {{ letsencrypt_domain_key }}.http-01 4096
   args:
-    creates: "{{ domain_key }}.http-01"
+    creates: "{{ letsencrypt_domain_key }}.http-01"
 
 - name: create http-01 challenge single domain csr
-  command: openssl req -new -sha256 -key {{ domain_key }}.http-01 -subj "{{ cert_subject }}" -out {{ domain_csr }}.http-01
+  command: openssl req -new -sha256 -key {{ letsencrypt_domain_key }}.http-01 -subj "{{ letsencrypt_cert_subject }}" -out {{ letsencrypt_domain_csr }}.http-01
   args:
-    creates: "{{ domain_csr }}.http-01"
+    creates: "{{ letsencrypt_domain_csr }}.http-01"
 
 - name: start Let's Encrypt http-01 challenge
   letsencrypt:
-    account_key: "{{ account_key }}"
-    csr: "{{ domain_csr }}.http-01"
-    dest: "{{ domain_crt }}.http-01"
+    account_key: "{{ letsencrypt_user_account_private_key }}"
+    csr: "{{ letsencrypt_domain_csr }}.http-01"
+    dest: "{{ letencrypt_domain_crt }}.http-01"
     challenge: http-01
     acme_directory: "{{ acme_directory }}"
   register: letsencrypt
 
 - set_fact:
-    challenge_file: /etc/letsencrypt/{{ letsencrypt['challenge_data'][domain_hostname]['http-01']['resource'] }}
-    challenge_value: "{{ letsencrypt['challenge_data'][domain_hostname]['http-01']['resource_value'] }}"
+    challenge_file: /etc/letsencrypt/{{ letsencrypt['challenge_data'][galaxy_extras_galaxy_domain]['http-01']['resource'] }}
+    challenge_value: "{{ letsencrypt['challenge_data'][galaxy_extras_galaxy_domain]['http-01']['resource_value'] }}"
   when: letsencrypt|changed
 
 - name: create http-01 challenge directory
@@ -53,9 +53,9 @@
 
 - name: Finalize http-01 challenge
   letsencrypt:
-    account_key: "{{ account_key }}"
-    csr: "{{ domain_csr }}.http-01"
-    dest: "{{ domain_crt }}.http-01"
+    account_key: "{{ letsencrypt_user_account_private_key }}"
+    csr: "{{ letsencrypt_domain_csr }}.http-01"
+    dest: "{{ letencrypt_domain_crt }}.http-01"
     data: "{{ letsencrypt }}"
     challenge: http-01
     acme_directory: "{{ acme_directory }}"
@@ -67,8 +67,8 @@
 - name: Copy signed certificates to correct location
   copy: remote_src=True src={{ item.src }} dest={{ item.dest }}
   with_items:
-   - { 'src': "{{ domain_crt }}.http-01", 'dest': "{{ nginx_ssl_certificate }}" }
-   - { 'src': "{{ domain_key }}.http-01", 'dest': "{{ nginx_ssl_certificate_key }}" }
+   - { 'src': "{{ letencrypt_domain_crt }}.http-01", 'dest': "{{ nginx_ssl_certificate }}" }
+   - { 'src': "{{ letsencrypt_domain_key }}.http-01", 'dest': "{{ nginx_ssl_certificate_key }}" }
   when: letsencrypt|changed
 
 - meta: flush_handlers

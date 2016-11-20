@@ -207,15 +207,11 @@ nginx_ssl_certificate_key: /etc/ssl/private/nginx.key
 nginx_ssl_certificate: /etc/ssl/private/nginx.crt
 
 letsencrypt_user_account_private_key: /etc/ssl/private/letsencrypt_user.key
-letsencrypt_user_account_public_key: /etc/ssl/private/letsencrypt_user.pub
-galaxy_extras_letsencrypt_csr: /etc/ssl/private/letsencrypt.csr
-
-account_key: "{{ letsencrypt_user_account_private_key }}"
-domain_key: "{{ nginx_ssl_certificate_key }}.letsencrypt"
-domain_csr: "{{ galaxy_extras_letsencrypt_csr }}"
-domain_crt: "{{ nginx_ssl_certificate }}.letsencrypt"
-domain_hostname: "{{ galaxy_extras_galaxy_domain }}"
-cert_subject: "/C=US/ST=New York/L=New York/O=Ansible/OU=Ansible Testing/CN={{ domain_hostname }}"
+letsencrypt_domain_csr: /etc/ssl/private/letsencrypt.csr
+letsencrypt_account_key: "{{ letsencrypt_user_account_private_key }}"
+letsencrypt_domain_key: "{{ nginx_ssl_certificate_key }}.letsencrypt"
+letencrypt_domain_crt: "{{ nginx_ssl_certificate }}.letsencrypt"
+letsencrypt_cert_subject: "/CN={{ galaxy_extras_galaxy_domain }}"
 acme_directory: "https://acme-v01.api.letsencrypt.org/directory"
 
 # Here you can set a path to a pair of ssl keys
