@@ -10,6 +10,8 @@
   notify:
     - restart nginx
 
+- meta: flush_handlers
+
 - name: create http-01 domain key
   command: openssl genrsa -out {{ domain_key }}.http-01 4096
   args:
