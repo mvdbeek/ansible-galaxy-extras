@@ -1,5 +1,15 @@
 # Letsencrypt-specific configuration:
 
+- name: Setup letsencrypt-specific configuration files
+  template: >
+    src={{ item.src }}
+    dest={{ item.dest }}
+    owner=root group=root mode={{ item.mode }}
+  with_items:
+    - { src: 'nginx_letsencrypt.conf.j2', dest: '{{ nginx_conf_directory }}/letsencrypt.conf', mode: "u=rw,g=r,o=r" }
+  notify:
+    - restart nginx
+
 - name: create http-01 domain key
   command: openssl genrsa -out {{ domain_key }}.http-01 4096
   args:
