@@ -211,9 +211,9 @@ letsencrypt_user_account_public_key: /etc/ssl/private/letsencrypt_user.pub
 galaxy_extras_letsencrypt_csr: /etc/ssl/private/letsencrypt.csr
 
 account_key: "{{ letsencrypt_user_account_private_key }}"
-domain_key: "{{ nginx_ssl_certificate_key }}"
+domain_key: "{{ nginx_ssl_certificate_key }}.letsencrypt"
 domain_csr: "{{ galaxy_extras_letsencrypt_csr }}"
-domain_crt: "{{ nginx_ssl_certificate }}"
+domain_crt: "{{ nginx_ssl_certificate }}.letsencrypt"
 domain_hostname: "{{ galaxy_extras_galaxy_domain }}"
 cert_subject: "/C=US/ST=New York/L=New York/O=Ansible/OU=Ansible Testing/CN={{ domain_hostname }}"
 
