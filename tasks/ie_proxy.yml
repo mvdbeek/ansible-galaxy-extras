@@ -1,4 +1,10 @@
 ---
+- name: Ensure urllib3 is installed.
+  apt: name={{ item }} state={{ galaxy_extras_apt_package_state }}
+  with_items:
+    - python-pyasn1
+    - python-urllib3
+
 - name: Check if the Ubuntu distro is supported
   get_url: url="https://deb.nodesource.com/node/dists/{{ ansible_distribution_release }}/Release" dest=/dev/null
   register: distro_supported
